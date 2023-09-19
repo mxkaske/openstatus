@@ -82,8 +82,10 @@ export default async function EditPage({
             {page && isProPlan ? (
               <CustomDomainForm
                 defaultValues={{
-                  customDomain: page?.customDomain,
-                  id: page?.id,
+                  ...page,
+                  monitors: page.monitorsToPages.map(
+                    ({ monitor }) => monitor.id,
+                  ),
                 }} // to be improved
               />
             ) : (
