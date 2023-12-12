@@ -1,4 +1,4 @@
-FROM oven/bun
+FROM oven/bun:1.0.16
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN rm -rf /packages/api
 RUN rm -rf /packages/integrations/vercel
 
 
-RUN bun install
+RUN bun install --trust-all-dependencies
 
 EXPOSE 3000
 
