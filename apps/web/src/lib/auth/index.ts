@@ -13,13 +13,28 @@ import { GitHubProvider, GoogleProvider, ResendProvider } from "./providers";
 
 export type { DefaultSession };
 
+const VERCEL_DEPLOYMENT = !!process.env.VERCEL_URL;
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  // debug: true,
+  debug: process.env.AUTH_DEBUG === "true",
   adapter,
   providers:
     process.env.NODE_ENV === "development"
       ? [GitHubProvider, GoogleProvider, ResendProvider]
       : [GitHubProvider, GoogleProvider],
+  cookies: {
+    sessionToken: {
+      name: `${VERCEL_DEPLOYMENT ? "__Secure-" : ""}authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        // When working on localhost, the cookie domain must be omitted entirely (https://stackoverflow.com/a/1188145)
+        domain: VERCEL_DEPLOYMENT ? ".openstatus.dev" : undefined,
+        secure: VERCEL_DEPLOYMENT,
+      },
+    },
+  },
   callbacks: {
     async signIn(params) {
       // We keep updating the user info when we loggin in
@@ -58,6 +73,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       // REMINDER: only used in dev mode
       if (params.account?.provider === "resend") {
+        if (Number.isNaN(Number(params.user.id))) return true;
+
         await db
           .update(user)
           .set({ updatedAt: new Date() })
@@ -113,6 +130,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/app/login",
     newUser: "/app/onboarding",
+    signOut: "/app/login",
   },
   // basePath: "/api/auth", // default is `/api/auth`
   // secret: process.env.AUTH_SECRET, // default is `AUTH_SECRET`
